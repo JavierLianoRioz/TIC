@@ -40,68 +40,159 @@ public class PlanificadorRutasApp {
         }
     }
 
+    /**
+     * Añade una nueva parada a la ruta actual.
+     * Solicita al usuario los detalles de la parada y obtiene sus coordenadas.
+     */
     private static void añadirParada() {
+        mostrarEncabezadoAñadirParada();
+        
+        String nombre = solicitarNombreParada();
+        String direccion = solicitarDireccionParada();
+        int tiempoPermanencia = solicitarTiempoPermanencia();
+        
+        Geocodificador.Coordenadas coordenadas = obtenerCoordenadasParada(direccion);
+        if (coordenadas == null) {
+            mostrarErrorObtencionCoordenadas();
+            return;
+        }
+
+        Parada nuevaParada = crearNuevaParada(nombre, direccion, coordenadas, tiempoPermanencia);
+        gestor.añadirParada(nuevaParada);
+        mostrarConfirmacionParadaAñadida();
+    }
+
+    private static void mostrarEncabezadoAñadirParada() {
         System.out.println("\n--- AÑADIR PARADA ---");
+    }
+
+    private static String solicitarNombreParada() {
         System.out.print("Nombre de la parada: ");
-        String nombre = scanner.nextLine();
-        
+        return scanner.nextLine();
+    }
+
+    private static String solicitarDireccionParada() {
         System.out.print("Dirección: ");
-        String direccion = scanner.nextLine();
-        
+        return scanner.nextLine();
+    }
+
+    private static int solicitarTiempoPermanencia() {
         System.out.print("Tiempo de permanencia (minutos): ");
         int tiempo = scanner.nextInt();
         scanner.nextLine(); // Consumir el salto de línea
+        return tiempo;
+    }
 
+    private static Geocodificador.Coordenadas obtenerCoordenadasParada(String direccion) {
         System.out.println("Obteniendo coordenadas...");
-        Geocodificador.Coordenadas coords = Geocodificador.obtenerCoordenadas(direccion);
-        if (coords == null) {
-            System.out.println("No se pudo obtener la ubicación. Intente con una dirección más específica.");
-            return;
-        }
+        return Geocodificador.obtenerCoordenadas(direccion);
+    }
 
-        Parada nuevaParada = new Parada(nombre, direccion, coords.latitud, coords.longitud, tiempo);
-        gestor.añadirParada(nuevaParada);
+    private static void mostrarErrorObtencionCoordenadas() {
+        System.out.println("No se pudo obtener la ubicación. Intente con una dirección más específica.");
+    }
+
+    private static Parada crearNuevaParada(String nombre, String direccion, 
+                                        Geocodificador.Coordenadas coordenadas, int tiempoPermanencia) {
+        return new Parada(nombre, direccion, coordenadas.latitud, coordenadas.longitud, tiempoPermanencia);
+    }
+
+    private static void mostrarConfirmacionParadaAñadida() {
         System.out.println("Parada añadida correctamente.");
     }
 
+    /**
+     * Muestra la ruta actual con todas las paradas en orden.
+     * Si no hay paradas, muestra un mensaje informativo.
+     */
     private static void mostrarRuta() {
-        System.out.println("\n--- RUTA ACTUAL ---");
-        var paradas = gestor.obtenerParadas();
+        mostrarEncabezadoRutaActual();
         
+        var paradas = gestor.obtenerParadas();
         if (paradas.isEmpty()) {
-            System.out.println("No hay paradas en la ruta.");
+            mostrarMensajeRutaVacia();
             return;
         }
 
+        listarParadas(paradas);
+    }
+
+    private static void mostrarEncabezadoRutaActual() {
+        System.out.println("\n--- RUTA ACTUAL ---");
+    }
+
+    private static void mostrarMensajeRutaVacia() {
+        System.out.println("No hay paradas en la ruta.");
+    }
+
+    private static void listarParadas(java.util.ArrayList<Parada> paradas) {
         for (int i = 0; i < paradas.size(); i++) {
             System.out.println((i + 1) + ". " + paradas.get(i));
         }
     }
 
+    /**
+     * Elimina una parada de la ruta actual.
+     * Muestra la lista de paradas y permite al usuario seleccionar una para eliminar.
+     */
     private static void eliminarParada() {
-        System.out.println("\n--- ELIMINAR PARADA ---");
-        var paradas = gestor.obtenerParadas();
+        mostrarEncabezadoEliminarParada();
         
+        var paradas = gestor.obtenerParadas();
         if (paradas.isEmpty()) {
-            System.out.println("No hay paradas para eliminar.");
+            mostrarMensajeNoHayParadas();
             return;
         }
 
         mostrarRuta();
-        System.out.print("Seleccione el número de la parada a eliminar: ");
-        int indice = scanner.nextInt() - 1;
-        scanner.nextLine(); // Consumir el salto de línea
-
+        int indice = solicitarIndiceParadaAEliminar();
+        
         if (gestor.borrarParada(indice)) {
-            System.out.println("Parada eliminada correctamente.");
+            mostrarConfirmacionParadaEliminada();
         } else {
-            System.out.println("No se pudo eliminar la parada. Índice no válido.");
+            mostrarErrorIndiceNoValido();
         }
     }
 
+    private static void mostrarEncabezadoEliminarParada() {
+        System.out.println("\n--- ELIMINAR PARADA ---");
+    }
+
+    private static void mostrarMensajeNoHayParadas() {
+        System.out.println("No hay paradas para eliminar.");
+    }
+
+    private static int solicitarIndiceParadaAEliminar() {
+        System.out.print("Seleccione el número de la parada a eliminar: ");
+        int indice = scanner.nextInt() - 1;
+        scanner.nextLine(); // Consumir el salto de línea
+        return indice;
+    }
+
+    private static void mostrarConfirmacionParadaEliminada() {
+        System.out.println("Parada eliminada correctamente.");
+    }
+
+    private static void mostrarErrorIndiceNoValido() {
+        System.out.println("No se pudo eliminar la parada. Índice no válido.");
+    }
+
+    /**
+     * Calcula y muestra la distancia total de la ruta actual.
+     * Si hay menos de 2 paradas, muestra un mensaje informativo.
+     */
     private static void calcularDistanciaTotal() {
+        mostrarEncabezadoDistanciaTotal();
+        
         double distancia = gestor.calcularDistanciaTotal();
+        mostrarDistanciaCalculada(distancia);
+    }
+
+    private static void mostrarEncabezadoDistanciaTotal() {
         System.out.println("\n--- DISTANCIA TOTAL ---");
+    }
+
+    private static void mostrarDistanciaCalculada(double distancia) {
         System.out.printf("La distancia total de la ruta es: %.2f km\n", distancia);
     }
 }
