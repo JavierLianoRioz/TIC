@@ -40,10 +40,6 @@ public class PlanificadorRutasApp {
         }
     }
 
-    /**
-     * Añade una nueva parada a la ruta actual.
-     * Solicita al usuario los detalles de la parada y obtiene sus coordenadas.
-     */
     private static void añadirParada() {
         mostrarEncabezadoAñadirParada();
         
@@ -58,7 +54,7 @@ public class PlanificadorRutasApp {
         }
 
         Parada nuevaParada = crearNuevaParada(nombre, direccion, coordenadas, tiempoPermanencia);
-        gestor.añadirParada(nuevaParada);
+        gestor.agregarParada(nuevaParada);
         mostrarConfirmacionParadaAñadida();
     }
 
@@ -101,14 +97,10 @@ public class PlanificadorRutasApp {
         System.out.println("Parada añadida correctamente.");
     }
 
-    /**
-     * Muestra la ruta actual con todas las paradas en orden.
-     * Si no hay paradas, muestra un mensaje informativo.
-     */
     private static void mostrarRuta() {
         mostrarEncabezadoRutaActual();
         
-        var paradas = gestor.obtenerParadas();
+        var paradas = gestor.obtenerTodasLasParadas();
         if (paradas.isEmpty()) {
             mostrarMensajeRutaVacia();
             return;
@@ -131,14 +123,10 @@ public class PlanificadorRutasApp {
         }
     }
 
-    /**
-     * Elimina una parada de la ruta actual.
-     * Muestra la lista de paradas y permite al usuario seleccionar una para eliminar.
-     */
     private static void eliminarParada() {
         mostrarEncabezadoEliminarParada();
         
-        var paradas = gestor.obtenerParadas();
+        var paradas = gestor.obtenerTodasLasParadas();
         if (paradas.isEmpty()) {
             mostrarMensajeNoHayParadas();
             return;
@@ -147,7 +135,7 @@ public class PlanificadorRutasApp {
         mostrarRuta();
         int indice = solicitarIndiceParadaAEliminar();
         
-        if (gestor.borrarParada(indice)) {
+        if (gestor.eliminarParadaPorIndice(indice)) {
             mostrarConfirmacionParadaEliminada();
         } else {
             mostrarErrorIndiceNoValido();
@@ -177,14 +165,10 @@ public class PlanificadorRutasApp {
         System.out.println("No se pudo eliminar la parada. Índice no válido.");
     }
 
-    /**
-     * Calcula y muestra la distancia total de la ruta actual.
-     * Si hay menos de 2 paradas, muestra un mensaje informativo.
-     */
     private static void calcularDistanciaTotal() {
         mostrarEncabezadoDistanciaTotal();
         
-        double distancia = gestor.calcularDistanciaTotal();
+        double distancia = gestor.calcularDistanciaTotalRuta();
         mostrarDistanciaCalculada(distancia);
     }
 

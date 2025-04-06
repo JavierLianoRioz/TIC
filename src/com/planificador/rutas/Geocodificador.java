@@ -10,30 +10,45 @@ public class Geocodificador {
     private static final String NOMINATIM_URL = "https://nominatim.openstreetmap.org/search?format=json&q=";
 
     public static Coordenadas obtenerCoordenadas(String direccion) {
+        assert direccion != null && !direccion.isBlank() : "La dirección no puede estar vacía";
+        
         try {
-            String urlStr = NOMINATIM_URL + java.net.URLEncoder.encode(direccion, "UTF-8");
-            URL url = new URL(urlStr);
-            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-            conn.setRequestMethod("GET");
-            conn.setRequestProperty("User-Agent", "PlanificadorRutasApp");
-
-            BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-            String inputLine;
-            StringBuilder content = new StringBuilder();
-            while ((inputLine = in.readLine()) != null) {
-                content.append(inputLine);
-            }
-            in.close();
-            conn.disconnect();
-
-            JSONObject json = new JSONObject(content.toString().substring(1, content.length() - 1));
-            double lat = json.getDouble("lat");
-            double lon = json.getDouble("lon");
-            return new Coordenadas(lat, lon);
+            String urlConsulta = construirURLConsulta(direccion);
+            String respuestaJSON = realizarPeticionHTTP(urlConsulta);
+            return procesarRespuestaJSON(respuestaJSON);
         } catch (Exception e) {
             System.out.println("Error al obtener coordenadas: " + e.getMessage());
             return null;
         }
+    }
+
+    private static String construirURLConsulta(String direccion) throws Exception {
+        return NOMINATIM_URL + java.net.URLEncoder.encode(direccion, "UTF-8");
+    }
+
+    private static String realizarPeticionHTTP(String urlConsulta) throws Exception {
+        URL url = new URL(urlConsulta);
+        HttpURLConnection conexion = (HttpURLConnection) url.openConnection();
+        conexion.setRequestMethod("GET");
+        conexion.setRequestProperty("User-Agent", "PlanificadorRutasApp");
+
+        BufferedReader lector = new BufferedReader(new InputStreamReader(conexion.getInputStream()));
+        StringBuilder contenido = new StringBuilder();
+        String linea;
+        while ((linea = lector.readLine()) != null) {
+            contenido.append(linea);
+        }
+        lector.close();
+        conexion.disconnect();
+        
+        return contenido.toString();
+    }
+
+    private static Coordenadas procesarRespuestaJSON(String respuestaJSON) {
+        JSONObject json = new JSONObject(respuestaJSON.substring(1, respuestaJSON.length() - 1));
+        double latitud = json.getDouble("lat");
+        double longitud = json.getDouble("lon");
+        return new Coordenadas(latitud, longitud);
     }
 
     public static class Coordenadas {

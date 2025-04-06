@@ -5,76 +5,93 @@ import java.util.ArrayList;
 public class GestorRutas {
     private final ArrayList<Parada> paradas = new ArrayList<>();
 
-    public void añadirParada(Parada parada) {
-        paradas.add(parada);
+    public void agregarParada(Parada nuevaParada) {
+        assert nuevaParada != null : "La parada no puede ser null";
+        paradas.add(nuevaParada);
     }
 
-    public boolean borrarParada(int indice) {
-        if (esIndiceValido(indice)) {
-            paradas.remove(indice);
+    public boolean eliminarParadaPorIndice(int indiceParada) {
+        if (esIndiceValido(indiceParada)) {
+            paradas.remove(indiceParada);
             return true;
         }
         return false;
     }
 
-    public void editarParada(int indice, Parada paradaActualizada) {
-        if (esIndiceValido(indice)) {
-            paradas.set(indice, paradaActualizada);
-        }
+    public void actualizarParada(int indiceParada, Parada paradaActualizada) {
+        assert esIndiceValido(indiceParada) : "Índice no válido";
+        assert paradaActualizada != null : "La parada actualizada no puede ser null";
+        paradas.set(indiceParada, paradaActualizada);
     }
 
-    public ArrayList<Parada> obtenerParadas() {
+    public ArrayList<Parada> obtenerTodasLasParadas() {
         return new ArrayList<>(paradas);
     }
 
-    public ArrayList<Parada> obtenerUltimasParadas(int cantidad) {
-        int inicio = Math.max(paradas.size() - cantidad, 0);
-        return new ArrayList<>(paradas.subList(inicio, paradas.size()));
+    public ArrayList<Parada> obtenerUltimasNParadas(int numeroParadas) {
+        assert numeroParadas >= 0 : "El número de paradas no puede ser negativo";
+        int indiceInicio = Math.max(paradas.size() - numeroParadas, 0);
+        return new ArrayList<>(paradas.subList(indiceInicio, paradas.size()));
     }
 
-    public boolean estaVacia() {
-        return paradas.isEmpty();
+    public boolean tieneParadas() {
+        return !paradas.isEmpty();
     }
 
-    public Parada obtenerParada(int indice) {
-        if (esIndiceValido(indice)) {
-            return paradas.get(indice);
+    public Parada obtenerParadaPorIndice(int indiceParada) {
+        if (esIndiceValido(indiceParada)) {
+            return paradas.get(indiceParada);
         }
         return null;
     }
 
-    public double calcularDistanciaTotal() {
-        if (paradas.size() < 2) return 0;
+    public double calcularDistanciaTotalRuta() {
+        assert paradas.size() >= 2 : "Se necesitan al menos 2 paradas para calcular la distancia";
         
         double distanciaTotal = 0;
         for (int i = 1; i < paradas.size(); i++) {
-            distanciaTotal += calcularDistancia(paradas.get(i-1), paradas.get(i));
+            distanciaTotal += calcularDistanciaEntreDosParadas(paradas.get(i-1), paradas.get(i));
         }
         return distanciaTotal;
+    } 
+
+    private double calcularDistanciaEntreDosParadas(Parada paradaInicio, Parada paradaFin) {
+        assert paradaInicio != null : "La parada de inicio no puede ser null";
+        assert paradaFin != null : "La parada de fin no puede ser null";
+        
+        final int RADIO_TIERRA_KM = 6371;
+        
+        double latitudInicio = convertirGradosARadianes(paradaInicio.getLatitud());
+        double longitudInicio = convertirGradosARadianes(paradaInicio.getLongitud());
+        double latitudFin = convertirGradosARadianes(paradaFin.getLatitud());
+        double longitudFin = convertirGradosARadianes(paradaFin.getLongitud());
+
+        double diferenciaLatitud = latitudFin - latitudInicio;
+        double diferenciaLongitud = longitudFin - longitudInicio;
+
+        double haversine = calcularFormulaHaversine(diferenciaLatitud, diferenciaLongitud, latitudInicio, latitudFin);
+        double anguloCentral = calcularAnguloCentralHaversine(haversine);
+        
+        return RADIO_TIERRA_KM * anguloCentral;
     }
 
-    private double calcularDistancia(Parada p1, Parada p2) {
-        // Implementación de la fórmula Haversine para calcular distancia entre coordenadas
-        final int RADIO_TIERRA = 6371; // en kilómetros
-        
-        double lat1 = Math.toRadians(p1.getLatitud());
-        double lon1 = Math.toRadians(p1.getLongitud());
-        double lat2 = Math.toRadians(p2.getLatitud());
-        double lon2 = Math.toRadians(p2.getLongitud());
+    private double convertirGradosARadianes(double grados) {
+        return Math.toRadians(grados);
+    }
 
-        double dLat = lat2 - lat1;
-        double dLon = lon2 - lon1;
+    private double calcularFormulaHaversine(double diferenciaLatitud, double diferenciaLongitud, 
+                                          double latitudInicio, double latitudFin) {
+        return Math.pow(Math.sin(diferenciaLatitud / 2), 2) +
+               Math.cos(latitudInicio) * Math.cos(latitudFin) *
+               Math.pow(Math.sin(diferenciaLongitud / 2), 2);
+    }
 
-        double a = Math.pow(Math.sin(dLat / 2), 2) +
-                   Math.cos(lat1) * Math.cos(lat2) *
-                   Math.pow(Math.sin(dLon / 2), 2);
-
-        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-        
-        return RADIO_TIERRA * c;
+    private double calcularAnguloCentralHaversine(double haversine) {
+        return 2 * Math.atan2(Math.sqrt(haversine), Math.sqrt(1 - haversine));
     }
 
     private boolean esIndiceValido(int indice) {
-        return indice >= 0 && indice < paradas.size();
+        assert indice >= 0 : "El índice no puede ser negativo";
+        return indice < paradas.size();
     }
 }
